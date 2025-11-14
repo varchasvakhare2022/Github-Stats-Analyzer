@@ -6,6 +6,7 @@ import LanguageChart from './components/LanguageChart'
 import SkeletonLoader from './components/SkeletonLoader'
 import ContributionsGraph from './components/ContributionsGraph'
 import FollowersFollowingChart from './components/FollowersFollowingChart'
+import AnimatedBackground from './components/AnimatedBackground'
 import { exportToPDF } from './utils/exportToPDF'
 
 function App() {
@@ -243,13 +244,20 @@ function App() {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ duration: 0.5 }}
-      className={`min-h-screen p-4 md:p-8 transition-all duration-300 ${
+      className={`min-h-screen w-full p-4 md:p-8 transition-all duration-300 relative ${
         isDarkMode
-          ? 'bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-white'
-          : 'bg-gradient-to-br from-gray-50 via-white to-gray-50 text-gray-900'
+          ? 'text-white'
+          : 'text-gray-900'
       }`}
+      style={{
+        background: 'transparent',
+      }}
     >
-      <div className="max-w-6xl mx-auto">
+      {/* Animated Background - Behind everything */}
+      <AnimatedBackground isDarkMode={isDarkMode} />
+      
+      {/* Content Container - Above background */}
+      <div className="max-w-6xl mx-auto relative z-10">
         {/* Header with title and theme toggle */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
@@ -324,7 +332,7 @@ function App() {
 
           <div className="mb-4 grid grid-cols-1 md:grid-cols-3 gap-4">
             <motion.input
-              value={token}
+value={token}
               onChange={e => setToken(e.target.value)}
               type="password"
               whileFocus={{ scale: 1.02 }}
@@ -333,8 +341,8 @@ function App() {
                   ? 'bg-slate-800/80 border-slate-700 text-white placeholder-slate-400 backdrop-blur-sm'
                   : 'bg-white border-gray-300 text-gray-900 placeholder-gray-400 shadow-md'
               }`}
-              placeholder="Optional: Personal Access Token (for higher rate limits)"
-            />
+placeholder="Optional: Personal Access Token (for higher rate limits)"
+/>
             <motion.div
               className={`p-3 text-sm rounded-xl ${
                 isDarkMode ? 'text-slate-400 bg-slate-800/50' : 'text-gray-600 bg-gray-50'
@@ -345,7 +353,7 @@ function App() {
             >
               Your PAT is stored in your browser's localStorage only.
             </motion.div>
-          </div>
+</div>
         </motion.form>
 
         {/* Error Message */}
@@ -506,7 +514,7 @@ function App() {
                       }`}
                     >
                       {stat.icon} {stat.label}
-                    </div>
+</div>
                     <motion.div
                       className={`text-3xl font-bold ${
                         isDarkMode ? 'text-white' : 'text-gray-900'
@@ -678,11 +686,11 @@ function App() {
           animate={{ opacity: 1 }}
           transition={{ delay: 0.8 }}
         >
-          Built with ❤️ · Client-side only · Provide PAT if you get rate-limited
+          Built with ❤️ by Varchasva Khare
         </motion.footer>
-      </div>
+</div>
     </motion.div>
-  )
+)
 }
 
 export default App
