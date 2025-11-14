@@ -7,7 +7,6 @@ export default function RateLimitStatus({ token, isDarkMode = true }) {
   const [tokenInvalid, setTokenInvalid] = useState(false)
 
   useEffect(() => {
-    // Reset token invalid state when token changes
     if (token) {
       setTokenInvalid(false)
     }
@@ -19,24 +18,20 @@ export default function RateLimitStatus({ token, isDarkMode = true }) {
         let headers = {}
         let response
         
-        // If token exists and hasn't been marked invalid, try with token first
         if (token && !tokenInvalid) {
           headers = { Authorization: `token ${token}` }
           response = await fetch('https://api.github.com/rate_limit', { headers })
           
-          // If 401 with token, mark token as invalid and retry without token
           if (response.status === 401) {
             setTokenInvalid(true)
             headers = {}
             response = await fetch('https://api.github.com/rate_limit', { headers })
           }
         } else {
-          // No token or token is invalid, make unauthenticated request
           response = await fetch('https://api.github.com/rate_limit', { headers })
         }
         
         if (!response.ok) {
-          // Silently fail - don't show rate limit if we can't fetch it
           setRateLimit(null)
           setLoading(false)
           return
@@ -44,7 +39,6 @@ export default function RateLimitStatus({ token, isDarkMode = true }) {
 
         const data = await response.json()
         
-        // Validate the data structure before using it
         if (data && data.resources && data.resources.core) {
           setRateLimit(data.resources.core)
           setLoading(false)
@@ -53,14 +47,13 @@ export default function RateLimitStatus({ token, isDarkMode = true }) {
           setLoading(false)
         }
       } catch (error) {
-        // Silently fail on network errors
         setRateLimit(null)
         setLoading(false)
       }
     }
 
     fetchRateLimit()
-    const interval = setInterval(fetchRateLimit, 60000) // Update every minute
+    const interval = setInterval(fetchRateLimit, 60000)
     return () => clearInterval(interval)
   }, [token, tokenInvalid])
 
@@ -68,7 +61,6 @@ export default function RateLimitStatus({ token, isDarkMode = true }) {
     return null
   }
 
-  // Now rateLimit is directly the core object
   const { remaining, limit, reset } = rateLimit
   const percentage = (remaining / limit) * 100
   const resetDate = new Date(reset * 1000)

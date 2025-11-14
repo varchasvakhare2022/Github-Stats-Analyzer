@@ -7,7 +7,6 @@ export default function ContributionsGraph({ username, isDarkMode }) {
     return null
   }
 
-  // Select specific props to pass to GitHubCalendar
   const selectLastYear = (contributions) => {
     const currentYear = new Date().getFullYear()
     const currentMonth = new Date().getMonth()

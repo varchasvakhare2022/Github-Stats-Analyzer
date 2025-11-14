@@ -1,18 +1,16 @@
-import React, { useEffect, useRef, useState } from 'react'
+import React, { useEffect, useRef, useState, memo } from 'react'
 
-export default function AnimatedBackground({ isDarkMode }) {
+const AnimatedBackground = memo(function AnimatedBackground({ isDarkMode }) {
   const canvasRef = useRef(null)
-  const animationFrameRef = useRef(null)
   const containerRef = useRef(null)
   const [mousePosition, setMousePosition] = useState({ x: 0, y: 0 })
 
-  // Track mouse movement for interactive effects
   useEffect(() => {
     const handleMouseMove = (e) => {
       setMousePosition({ x: e.clientX, y: e.clientY })
     }
 
-    window.addEventListener('mousemove', handleMouseMove)
+    window.addEventListener('mousemove', handleMouseMove, { passive: true })
     return () => window.removeEventListener('mousemove', handleMouseMove)
   }, [])
 
@@ -20,109 +18,105 @@ export default function AnimatedBackground({ isDarkMode }) {
     const canvas = canvasRef.current
     if (!canvas) return
 
-    const ctx = canvas.getContext('2d')
+    const ctx = canvas.getContext('2d', { alpha: true })
     let particles = []
     let mouse = { x: 0, y: 0 }
+    let rafId = null
 
-    // Update mouse position
+    let mouseUpdateRaf = null
     const updateMouse = (e) => {
-      mouse.x = e.clientX
-      mouse.y = e.clientY
+      if (!mouseUpdateRaf) {
+        mouseUpdateRaf = requestAnimationFrame(() => {
+          mouse.x = e.clientX
+          mouse.y = e.clientY
+          mouseUpdateRaf = null
+        })
+      }
     }
-    window.addEventListener('mousemove', updateMouse)
+    window.addEventListener('mousemove', updateMouse, { passive: true })
 
-    // Set canvas size
     const resizeCanvas = () => {
       canvas.width = window.innerWidth
       canvas.height = window.innerHeight
     }
     resizeCanvas()
-    window.addEventListener('resize', resizeCanvas)
+    window.addEventListener('resize', resizeCanvas, { passive: true })
 
-    // Enhanced Particle class with luxury effects
     class Particle {
       constructor() {
         this.reset()
-        this.baseSize = Math.random() * 2 + 1 // Smaller particles (1-3px)
+        this.baseSize = Math.random() * 2 + 1
         this.targetSize = this.baseSize
       }
 
       reset() {
         this.x = Math.random() * canvas.width
         this.y = Math.random() * canvas.height
-        this.size = Math.random() * 2 + 1 // Smaller base size (1-3px)
-        this.speedX = (Math.random() - 0.5) * 0.5
-        this.speedY = (Math.random() - 0.5) * 0.5
+        this.size = Math.random() * 2 + 1
+        this.speedX = (Math.random() - 0.5) * 0.4
+        this.speedY = (Math.random() - 0.5) * 0.4
         this.opacity = isDarkMode 
-          ? Math.random() * 0.5 + 0.4 // Much higher opacity for dark mode
-          : Math.random() * 0.6 + 0.5 // Much higher base opacity for light mode
+          ? Math.random() * 0.4 + 0.5
+          : Math.random() * 0.5 + 0.5
         this.baseOpacity = this.opacity
         this.hue = isDarkMode 
-          ? Math.random() * 60 + 180 // Cyan to blue range for dark mode
-          : Math.random() * 80 + 140 // Teal to cyan range for light mode
-        this.pulseSpeed = Math.random() * 0.015 + 0.008
+          ? Math.random() * 60 + 180
+          : Math.random() * 80 + 140
+        this.pulseSpeed = Math.random() * 0.01 + 0.005
         this.pulsePhase = Math.random() * Math.PI * 2
         this.angle = Math.random() * Math.PI * 2
-        this.rotationSpeed = (Math.random() - 0.5) * 0.02
+        this.rotationSpeed = (Math.random() - 0.5) * 0.015
       }
 
       update() {
-        // Smooth movement
         this.x += this.speedX
         this.y += this.speedY
 
-        // Wrap around edges
         if (this.x < 0) this.x = canvas.width
         if (this.x > canvas.width) this.x = 0
         if (this.y < 0) this.y = canvas.height
         if (this.y > canvas.height) this.y = 0
 
-        // Mouse interaction - particles react to mouse (more pronounced)
         const dx = mouse.x - this.x
         const dy = mouse.y - this.y
-        const distance = Math.sqrt(dx * dx + dy * dy)
-        const maxDistance = 250 // Increased interaction distance
+        const distSq = dx * dx + dy * dy
+        const maxDistSq = 250 * 250
 
-        if (distance < maxDistance) {
-          const force = (maxDistance - distance) / maxDistance
+        if (distSq < maxDistSq) {
+          const distance = Math.sqrt(distSq)
+          const force = (250 - distance) / 250
           const angle = Math.atan2(dy, dx)
-          this.x -= Math.cos(angle) * force * 3 // Stronger push
-          this.y -= Math.sin(angle) * force * 3
-          this.targetSize = this.baseSize * (1 + force * 0.65) // 60-70% increase on hover
-          this.opacity = Math.min(this.baseOpacity * (1 + force * 3), isDarkMode ? 1.0 : 0.9) // Much brighter on hover
+          this.x -= Math.cos(angle) * force * 2.5
+          this.y -= Math.sin(angle) * force * 2.5
+          this.targetSize = this.baseSize * (1 + force * 0.65)
+          this.opacity = Math.min(this.baseOpacity * (1 + force * 2.5), isDarkMode ? 1.0 : 0.9)
         } else {
           this.targetSize = this.baseSize
           this.opacity = this.baseOpacity
         }
 
-        // Smooth size transition
-        this.size += (this.targetSize - this.size) * 0.1
+        this.size += (this.targetSize - this.size) * 0.12
 
-        // Pulse animation
         this.pulsePhase += this.pulseSpeed
         this.angle += this.rotationSpeed
       }
 
       draw() {
-        ctx.save()
+        const glowRadius = this.size * 10
         
-        // Luxury glow effect with multiple layers (much stronger)
-        const glowRadius = this.size * 12 // Larger glow radius
         const gradient = ctx.createRadialGradient(
           this.x, this.y, 0,
           this.x, this.y, glowRadius
         )
         
         if (isDarkMode) {
-          gradient.addColorStop(0, `hsla(${this.hue}, 90%, 75%, ${this.opacity * 1.2})`)
-          gradient.addColorStop(0.3, `hsla(${this.hue}, 85%, 70%, ${this.opacity * 0.8})`)
-          gradient.addColorStop(0.6, `hsla(${this.hue}, 80%, 65%, ${this.opacity * 0.5})`)
-          gradient.addColorStop(1, `hsla(${this.hue}, 75%, 60%, 0)`)
+          gradient.addColorStop(0, `hsla(${this.hue}, 90%, 75%, ${this.opacity * 1.1})`)
+          gradient.addColorStop(0.5, `hsla(${this.hue}, 85%, 70%, ${this.opacity * 0.6})`)
+          gradient.addColorStop(1, 'transparent')
         } else {
-          gradient.addColorStop(0, `hsla(${this.hue}, 85%, 55%, ${this.opacity * 1.5})`)
-          gradient.addColorStop(0.3, `hsla(${this.hue}, 80%, 50%, ${this.opacity * 1.2})`)
-          gradient.addColorStop(0.6, `hsla(${this.hue}, 75%, 45%, ${this.opacity * 0.8})`)
-          gradient.addColorStop(1, `hsla(${this.hue}, 70%, 40%, 0)`)
+          gradient.addColorStop(0, `hsla(${this.hue}, 85%, 55%, ${this.opacity * 1.3})`)
+          gradient.addColorStop(0.5, `hsla(${this.hue}, 80%, 50%, ${this.opacity * 1.0})`)
+          gradient.addColorStop(1, 'transparent')
         }
         
         ctx.fillStyle = gradient
@@ -130,15 +124,14 @@ export default function AnimatedBackground({ isDarkMode }) {
         ctx.arc(this.x, this.y, glowRadius, 0, Math.PI * 2)
         ctx.fill()
         
-        // Core particle with rotation (much brighter)
+        ctx.save()
         ctx.translate(this.x, this.y)
         ctx.rotate(this.angle)
         ctx.globalAlpha = this.opacity
         ctx.fillStyle = isDarkMode 
-          ? `hsla(${this.hue}, 90%, 80%, ${this.opacity * 2.0})`
-          : `hsla(${this.hue}, 85%, 50%, ${this.opacity * 2.5})`
+          ? `hsla(${this.hue}, 90%, 80%, ${this.opacity * 1.8})`
+          : `hsla(${this.hue}, 85%, 50%, ${this.opacity * 2.2})`
         
-        // Draw star shape for luxury effect
         ctx.beginPath()
         const spikes = 5
         const outerRadius = this.size
@@ -156,15 +149,13 @@ export default function AnimatedBackground({ isDarkMode }) {
         }
         ctx.closePath()
         ctx.fill()
-        
         ctx.restore()
       }
     }
 
-    // Initialize particles (more particles for better visibility)
     const initParticles = () => {
       particles = []
-      const particleCount = isDarkMode ? 120 : 100 // More particles
+      const particleCount = isDarkMode ? 60 : 50
       for (let i = 0; i < particleCount; i++) {
         particles.push(new Particle())
       }
@@ -172,69 +163,78 @@ export default function AnimatedBackground({ isDarkMode }) {
 
     initParticles()
 
-    // Enhanced connections with gradient and glow
     const drawConnections = () => {
+      const maxDist = 180
+      const maxDistSq = maxDist * maxDist
+      const connections = []
+      
+      const maxConnectionsPerParticle = 3
+      
       for (let i = 0; i < particles.length; i++) {
-        for (let j = i + 1; j < particles.length; j++) {
+        let connectionCount = 0
+        for (let j = i + 1; j < particles.length && connectionCount < maxConnectionsPerParticle; j++) {
           const dx = particles[i].x - particles[j].x
           const dy = particles[i].y - particles[j].y
-          const distance = Math.sqrt(dx * dx + dy * dy)
+          const distSq = dx * dx + dy * dy
 
-          if (distance < 220) { // Increased connection distance
+          if (distSq < maxDistSq) {
+            const distance = Math.sqrt(distSq)
             const opacity = isDarkMode 
-              ? (1 - distance / 220) * 0.7 // Much higher opacity
-              : (1 - distance / 220) * 1.0 // Full opacity for light mode
-            ctx.beginPath()
-            ctx.moveTo(particles[i].x, particles[i].y)
-            ctx.lineTo(particles[j].x, particles[j].y)
+              ? (1 - distance / maxDist) * 0.5
+              : (1 - distance / maxDist) * 0.8
             
-            // Luxury gradient line with glow (much stronger)
-            const lineGradient = ctx.createLinearGradient(
-              particles[i].x, particles[i].y,
-              particles[j].x, particles[j].y
-            )
-            
-            const hue1 = particles[i].hue
-            const hue2 = particles[j].hue
-            
-            if (isDarkMode) {
-              lineGradient.addColorStop(0, `hsla(${hue1}, 85%, 70%, ${opacity})`)
-              lineGradient.addColorStop(0.5, `hsla(${(hue1 + hue2) / 2}, 90%, 75%, ${opacity * 1.3})`)
-              lineGradient.addColorStop(1, `hsla(${hue2}, 85%, 70%, ${opacity})`)
-            } else {
-              lineGradient.addColorStop(0, `hsla(${hue1}, 80%, 50%, ${opacity})`)
-              lineGradient.addColorStop(0.5, `hsla(${(hue1 + hue2) / 2}, 85%, 55%, ${opacity * 1.5})`)
-              lineGradient.addColorStop(1, `hsla(${hue2}, 80%, 50%, ${opacity})`)
-            }
-            
-            ctx.strokeStyle = lineGradient
-            ctx.lineWidth = 2.5 // Thicker lines
-            ctx.lineCap = 'round'
-            ctx.shadowBlur = 15 // Stronger shadow
-            ctx.shadowColor = isDarkMode 
-              ? `hsla(${(hue1 + hue2) / 2}, 90%, 75%, ${opacity * 0.8})`
-              : `hsla(${(hue1 + hue2) / 2}, 85%, 55%, ${opacity * 0.8})`
-            ctx.stroke()
-            ctx.shadowBlur = 0
+            connections.push({
+              x1: particles[i].x,
+              y1: particles[i].y,
+              x2: particles[j].x,
+              y2: particles[j].y,
+              hue1: particles[i].hue,
+              hue2: particles[j].hue,
+              opacity
+            })
+            connectionCount++
           }
         }
       }
+
+      connections.forEach(conn => {
+        const lineGradient = ctx.createLinearGradient(conn.x1, conn.y1, conn.x2, conn.y2)
+        const midHue = (conn.hue1 + conn.hue2) / 2
+        
+        if (isDarkMode) {
+          lineGradient.addColorStop(0, `hsla(${conn.hue1}, 85%, 70%, ${conn.opacity})`)
+          lineGradient.addColorStop(0.5, `hsla(${midHue}, 90%, 75%, ${conn.opacity * 1.2})`)
+          lineGradient.addColorStop(1, `hsla(${conn.hue2}, 85%, 70%, ${conn.opacity})`)
+        } else {
+          lineGradient.addColorStop(0, `hsla(${conn.hue1}, 80%, 50%, ${conn.opacity})`)
+          lineGradient.addColorStop(0.5, `hsla(${midHue}, 85%, 55%, ${conn.opacity * 1.3})`)
+          lineGradient.addColorStop(1, `hsla(${conn.hue2}, 80%, 50%, ${conn.opacity})`)
+        }
+        
+        ctx.strokeStyle = lineGradient
+        ctx.lineWidth = 2
+        ctx.lineCap = 'round'
+        ctx.beginPath()
+        ctx.moveTo(conn.x1, conn.y1)
+        ctx.lineTo(conn.x2, conn.y2)
+        ctx.stroke()
+      })
     }
 
-    // Animation loop
     const animate = () => {
+      rafId = requestAnimationFrame(animate)
+      
       ctx.clearRect(0, 0, canvas.width, canvas.height)
 
-      // Update and draw particles
       particles.forEach(particle => {
         particle.update()
-        particle.draw()
       })
 
-      // Draw connections
       drawConnections()
 
-      animationFrameRef.current = requestAnimationFrame(animate)
+      particles.forEach(particle => {
+        particle.draw()
+      })
     }
 
     animate()
@@ -242,15 +242,17 @@ export default function AnimatedBackground({ isDarkMode }) {
     return () => {
       window.removeEventListener('resize', resizeCanvas)
       window.removeEventListener('mousemove', updateMouse)
-      if (animationFrameRef.current) {
-        cancelAnimationFrame(animationFrameRef.current)
+      if (rafId) {
+        cancelAnimationFrame(rafId)
+      }
+      if (mouseUpdateRaf) {
+        cancelAnimationFrame(mouseUpdateRaf)
       }
     }
   }, [isDarkMode])
 
   return (
     <div ref={containerRef} className="fixed inset-0 overflow-hidden pointer-events-none -z-10">
-      {/* Luxury gradient mesh background */}
       <div
         className={`absolute inset-0 ${isDarkMode ? 'opacity-30' : 'opacity-70'}`}
         style={{
@@ -261,9 +263,7 @@ export default function AnimatedBackground({ isDarkMode }) {
         }}
       />
 
-      {/* Animated gradient blobs with luxury morphing */}
       <div className="absolute inset-0 overflow-hidden">
-        {/* Primary blob - Top Left */}
         <div
           className={`absolute -top-40 -left-40 w-[800px] h-[800px] rounded-full blur-[120px] ${
             isDarkMode
@@ -275,7 +275,6 @@ export default function AnimatedBackground({ isDarkMode }) {
           }}
         />
         
-        {/* Secondary blob - Top Right */}
         <div
           className={`absolute -top-40 -right-40 w-[900px] h-[900px] rounded-full blur-[140px] ${
             isDarkMode
@@ -288,7 +287,6 @@ export default function AnimatedBackground({ isDarkMode }) {
           }}
         />
         
-        {/* Tertiary blob - Bottom Left */}
         <div
           className={`absolute -bottom-40 -left-40 w-[850px] h-[850px] rounded-full blur-[130px] ${
             isDarkMode
@@ -301,7 +299,6 @@ export default function AnimatedBackground({ isDarkMode }) {
           }}
         />
         
-        {/* Quaternary blob - Bottom Right */}
         <div
           className={`absolute -bottom-40 -right-40 w-[750px] h-[750px] rounded-full blur-[110px] ${
             isDarkMode
@@ -314,7 +311,6 @@ export default function AnimatedBackground({ isDarkMode }) {
           }}
         />
         
-        {/* Center blob - Luxury accent */}
         <div
           className={`absolute top-1/2 left-1/2 -translate-x-1/2 -translate-y-1/2 w-[600px] h-[600px] rounded-full blur-[100px] ${
             isDarkMode
@@ -328,7 +324,6 @@ export default function AnimatedBackground({ isDarkMode }) {
         />
       </div>
 
-      {/* Luxury animated grid pattern */}
       <div
         className={`absolute inset-0 ${
           isDarkMode ? 'opacity-[0.08]' : 'opacity-[0.25]'
@@ -345,7 +340,6 @@ export default function AnimatedBackground({ isDarkMode }) {
         }}
       />
 
-      {/* Luxury shimmer overlay */}
       <div
         className={`absolute inset-0 ${
           isDarkMode ? 'opacity-[0.06]' : 'opacity-[0.2]'
@@ -364,17 +358,15 @@ export default function AnimatedBackground({ isDarkMode }) {
         }}
       />
 
-      {/* Interactive particle canvas */}
       <canvas
         ref={canvasRef}
         className="absolute inset-0"
         style={{ 
           mixBlendMode: isDarkMode ? 'screen' : 'normal',
-          opacity: isDarkMode ? 1.0 : 1.0, // Full opacity for both modes
+          opacity: isDarkMode ? 1.0 : 1.0,
         }}
       />
 
-      {/* Luxury floating orbs with enhanced glow */}
       <div className="absolute inset-0 overflow-hidden">
         <div
           className={`absolute top-1/4 left-1/4 w-96 h-96 rounded-full blur-[150px] ${
@@ -425,7 +417,6 @@ export default function AnimatedBackground({ isDarkMode }) {
         />
       </div>
 
-      {/* Luxury radial gradient overlay for depth */}
       <div
         className="absolute inset-0"
         style={{
@@ -436,24 +427,25 @@ export default function AnimatedBackground({ isDarkMode }) {
         }}
       />
 
-      {/* Interactive mouse glow effect (much more pronounced) */}
       <div
         className="absolute pointer-events-none transition-opacity duration-300"
         style={{
           left: `${mousePosition.x}px`,
           top: `${mousePosition.y}px`,
           transform: 'translate(-50%, -50%)',
-          width: '800px', // Larger glow
+          width: '800px',
           height: '800px',
           borderRadius: '50%',
           background: isDarkMode
             ? 'radial-gradient(circle, rgba(16, 185, 129, 0.4) 0%, rgba(59, 130, 246, 0.3) 30%, rgba(139, 92, 246, 0.2) 50%, transparent 70%)'
             : 'radial-gradient(circle, rgba(16, 185, 129, 0.6) 0%, rgba(59, 130, 246, 0.5) 30%, rgba(139, 92, 246, 0.4) 50%, transparent 70%)',
-          filter: 'blur(100px)', // Stronger blur for more visible effect
+          filter: 'blur(100px)',
           opacity: mousePosition.x > 0 && mousePosition.y > 0 ? 1 : 0,
           transition: 'opacity 0.2s ease, transform 0.1s ease',
         }}
       />
     </div>
   )
-}
+})
+
+export default AnimatedBackground

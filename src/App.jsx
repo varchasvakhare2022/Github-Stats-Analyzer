@@ -20,12 +20,10 @@ function App() {
   const [totalStars, setTotalStars] = useState(0)
   const [totalForks, setTotalForks] = useState(0)
   const [languages, setLanguages] = useState({})
-  // Initialize theme from localStorage or default to dark
   const [isDarkMode, setIsDarkMode] = useState(() => {
     if (typeof window !== 'undefined') {
       const savedTheme = localStorage.getItem('theme')
       const isDark = savedTheme ? savedTheme === 'dark' : true
-      // Apply theme immediately to prevent flash
       document.documentElement.classList.toggle('dark', isDark)
       return isDark
     }
@@ -36,13 +34,11 @@ function App() {
   const [sortBy, setSortBy] = useState('updated')
   const [isExporting, setIsExporting] = useState(false)
 
-  // Save theme to localStorage and apply when it changes
   useEffect(() => {
     localStorage.setItem('theme', isDarkMode ? 'dark' : 'light')
     document.documentElement.classList.toggle('dark', isDarkMode)
   }, [isDarkMode])
 
-  // Load token from localStorage
   useEffect(() => {
     const savedToken = localStorage.getItem('github_token')
     if (savedToken) {
@@ -50,18 +46,15 @@ function App() {
     }
   }, [])
 
-  // Save token to localStorage
   useEffect(() => {
     if (token) {
       localStorage.setItem('github_token', token)
     }
   }, [token])
 
-  // Filter and sort repos
   useEffect(() => {
     let filtered = [...repos]
 
-    // Search filter
     if (searchQuery) {
       filtered = filtered.filter(
         repo =>
@@ -70,12 +63,10 @@ function App() {
       )
     }
 
-    // Language filter
     if (languageFilter) {
       filtered = filtered.filter(repo => repo.language === languageFilter)
     }
 
-    // Sort
     filtered.sort((a, b) => {
       switch (sortBy) {
         case 'stars':
@@ -168,13 +159,11 @@ function App() {
       setProfile(profileData)
       setRepos(reposData)
 
-      // Calculate totals
       const stars = reposData.reduce((sum, repo) => sum + repo.stargazers_count, 0)
       const forks = reposData.reduce((sum, repo) => sum + repo.forks_count, 0)
       setTotalStars(stars)
       setTotalForks(forks)
 
-      // Count languages
       const langCount = {}
       reposData.forEach(repo => {
         if (repo.language) {
@@ -189,10 +178,8 @@ function App() {
     }
   }
 
-  // Get unique languages from repos
   const availableLanguages = [...new Set(repos.map(repo => repo.language).filter(Boolean))].sort()
 
-  // Handle PDF Export
   const handleExportPDF = async () => {
     if (!profile || repos.length === 0) {
       setError('No data to export. Please fetch a user profile first.')
@@ -215,7 +202,6 @@ function App() {
     }
   }
 
-  // Animation variants
   const containerVariants = {
     hidden: { opacity: 0 },
     visible: {
@@ -253,12 +239,9 @@ function App() {
         background: 'transparent',
       }}
     >
-      {/* Animated Background - Behind everything */}
       <AnimatedBackground isDarkMode={isDarkMode} />
       
-      {/* Content Container - Above background */}
       <div className="max-w-6xl mx-auto relative z-10">
-        {/* Header with title and theme toggle */}
         <motion.div
           initial={{ opacity: 0, y: -20 }}
           animate={{ opacity: 1, y: 0 }}
@@ -274,7 +257,7 @@ function App() {
             whileHover={{ scale: 1.05 }}
             transition={{ type: 'spring', stiffness: 400 }}
           >
-            GitHub Repo Stats Viewer
+            GitHub Stats Analyzer
           </motion.h1>
           <motion.button
             onClick={toggleTheme}
@@ -291,7 +274,6 @@ function App() {
           </motion.button>
         </motion.div>
 
-        {/* Rate Limit Status */}
         <motion.div
           initial={{ opacity: 0, y: -10 }}
           animate={{ opacity: 1, y: 0 }}
@@ -300,7 +282,6 @@ function App() {
           <RateLimitStatus token={token} isDarkMode={isDarkMode} />
         </motion.div>
 
-        {/* Search Form */}
         <motion.form
           onSubmit={handleSubmit}
           initial={{ opacity: 0, y: 20 }}
@@ -353,10 +334,9 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
             >
               Your PAT is stored in your browser's localStorage only.
             </motion.div>
-</div>
+          </div>
         </motion.form>
 
-        {/* Error Message */}
         <AnimatePresence>
           {error && (
             <motion.div
@@ -373,10 +353,8 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
           )}
         </AnimatePresence>
 
-        {/* Loading Skeleton */}
         {loading && <SkeletonLoader isDarkMode={isDarkMode} />}
 
-        {/* Profile Section */}
         <AnimatePresence mode="wait">
           {profile && !loading && (
             <motion.section
@@ -391,7 +369,6 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
                   : 'bg-white border border-gray-200 shadow-xl'
               }`}
             >
-              {/* Export PDF Button */}
               <motion.div
                 className="flex justify-end mb-4"
                 initial={{ opacity: 0, y: -10 }}
@@ -479,10 +456,8 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
                 </motion.div>
               </motion.div>
 
-              {/* Followers/Following Chart */}
               <FollowersFollowingChart profile={profile} isDarkMode={isDarkMode} />
 
-              {/* Stats Grid */}
               <motion.div
                 className="grid grid-cols-1 sm:grid-cols-3 gap-4 mb-6"
                 variants={containerVariants}
@@ -529,10 +504,8 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
                 ))}
               </motion.div>
 
-              {/* Contributions Graph */}
               <ContributionsGraph username={profile.login} isDarkMode={isDarkMode} />
 
-              {/* Language Chart */}
               {Object.keys(languages).length > 0 && (
                 <motion.div
                   initial={{ opacity: 0, y: 20 }}
@@ -554,7 +527,6 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
           )}
         </AnimatePresence>
 
-        {/* Repositories Section */}
         <AnimatePresence>
           {repos.length > 0 && !loading && (
             <motion.section
@@ -587,7 +559,6 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
                 </motion.h2>
               </motion.div>
 
-              {/* Search and Filter Controls */}
               <motion.div
                 className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4"
                 initial={{ opacity: 0, y: 20 }}
@@ -640,7 +611,6 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
                 </motion.select>
               </motion.div>
 
-              {/* Repository List */}
               <AnimatePresence mode="wait">
                 {filteredRepos.length === 0 ? (
                   <motion.div
@@ -677,7 +647,6 @@ placeholder="Optional: Personal Access Token (for higher rate limits)"
           )}
         </AnimatePresence>
 
-        {/* Footer */}
         <motion.footer
           className={`mt-12 text-center text-sm ${
             isDarkMode ? 'text-slate-500' : 'text-gray-500'

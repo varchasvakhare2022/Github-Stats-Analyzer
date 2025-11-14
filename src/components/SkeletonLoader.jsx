@@ -4,7 +4,6 @@ import { motion } from 'framer-motion'
 export default function SkeletonLoader({ isDarkMode }) {
   return (
     <div className="space-y-4">
-      {/* Profile Skeleton */}
       <motion.div
         initial={{ opacity: 0, y: 20 }}
         animate={{ opacity: 1, y: 0 }}
@@ -61,7 +60,6 @@ export default function SkeletonLoader({ isDarkMode }) {
         </div>
       </motion.div>
 
-      {/* Stats Skeleton */}
       <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {[1, 2, 3].map((i) => (
           <motion.div
@@ -105,7 +103,6 @@ export default function SkeletonLoader({ isDarkMode }) {
         ))}
       </div>
 
-      {/* Repos Skeleton */}
       <div className="space-y-3">
         {[1, 2, 3, 4].map((i) => (
           <motion.div

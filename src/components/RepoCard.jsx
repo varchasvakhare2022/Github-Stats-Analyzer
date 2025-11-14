@@ -1,7 +1,7 @@
 import React from 'react'
 import { motion } from 'framer-motion'
 
-export default function RepoCard({ repo, isDarkMode, index = 0 }) {
+const RepoCard = React.memo(function RepoCard({ repo, isDarkMode, index = 0 }) {
   return (
     <motion.a
       href={repo.html_url}
@@ -85,4 +85,6 @@ export default function RepoCard({ repo, isDarkMode, index = 0 }) {
       </motion.div>
     </motion.a>
   )
-}
+})
+
+export default RepoCard

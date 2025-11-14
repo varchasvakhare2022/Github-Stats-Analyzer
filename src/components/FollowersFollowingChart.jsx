@@ -44,7 +44,6 @@ export default function FollowersFollowingChart({ profile, isDarkMode }) {
         👥 Followers & Following
       </motion.h3>
 
-      {/* Stats Cards */}
       <div className="grid grid-cols-2 gap-4 mb-6">
         <motion.div
           className={`p-4 rounded-lg ${
@@ -107,7 +106,6 @@ export default function FollowersFollowingChart({ profile, isDarkMode }) {
         </motion.div>
       </div>
 
-      {/* Bar Chart */}
       <motion.div
         className={`w-full h-64 ${isDarkMode ? 'recharts-wrapper-dark' : 'recharts-wrapper-light'}`}
         initial={{ opacity: 0 }}
@@ -157,7 +155,6 @@ export default function FollowersFollowingChart({ profile, isDarkMode }) {
         </ResponsiveContainer>
       </motion.div>
 
-      {/* Ratio Info */}
       <motion.div
         className={`mt-4 p-3 rounded-lg text-center ${
           isDarkMode ? 'bg-slate-700/50' : 'bg-gray-50'
