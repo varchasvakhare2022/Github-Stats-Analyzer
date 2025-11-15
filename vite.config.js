@@ -27,4 +27,14 @@ export default defineConfig({
   optimizeDeps: {
     include: ['react', 'react-dom', 'framer-motion', 'recharts'],
   },
+  // Preview server configuration for Railway
+  preview: {
+    host: true, // Allow external connections
+    port: process.env.PORT || 4173,
+    strictPort: false,
+    allowedHosts: [
+      'github-stats.up.railway.app',
+      '.railway.app', // Allow all Railway subdomains
+    ],
+  },
 })
